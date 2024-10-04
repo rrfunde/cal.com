@@ -38,7 +38,7 @@ export function Calendar(props: CalendarComponentProps) {
     [startHour, endHour, timezone]
   );
   const numberOfGridStopsPerDay = hours.length * usersCellsStopsPerHour;
-  const hourSize = 58;
+  const hourSize = 28;
 
   // Initialize state on mount
   useEffect(() => {
