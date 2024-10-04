@@ -83,8 +83,8 @@ export const LargeCalendar = ({
       <Calendar
         isPending={isLoading}
         availableTimeslots={availableSlots}
-        startHour={0}
-        endHour={23}
+        startHour={9}
+        endHour={20}
         events={overlayEventsForDate}
         startDate={startDate}
         endDate={endDate}

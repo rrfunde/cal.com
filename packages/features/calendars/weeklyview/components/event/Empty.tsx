@@ -135,13 +135,12 @@ type CellProps = {
   timeSlot: Dayjs;
 };
 
-function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
+export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
   const { timeFormat } = useTimePreferences();
 
-  const { onEmptyCellClick, hoverEventDuration } = useCalendarStore(
+  const { onEmptyCellClick } = useCalendarStore(
     (state) => ({
       onEmptyCellClick: state.onEmptyCellClick,
-      hoverEventDuration: state.hoverEventDuration,
     }),
     shallow
   );
@@ -158,29 +157,38 @@ function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
       data-slot={timeSlot.toISOString()}
       data-testid="calendar-empty-cell"
       style={{
-        height: `calc(${hoverEventDuration}*var(--one-minute-height))`,
+        height: `calc(60 * var(--one-minute-height))`, // Fixed height for 60 minutes
         overflow: "visible",
-        top: topOffsetMinutes ? `calc(${topOffsetMinutes}*var(--one-minute-height))` : undefined,
+        top: topOffsetMinutes ? `calc(${topOffsetMinutes} * var(--one-minute-height))` : undefined,
       }}
       onClick={() => {
-        onEmptyCellClick && onEmptyCellClick(timeSlot.toDate());
+        if (!isDisabled && onEmptyCellClick) {
+          onEmptyCellClick(timeSlot.toDate());
+        }
       }}>
-      {!isDisabled && hoverEventDuration !== 0 && (
+      {/* Hover Tooltip */}
+      {!isDisabled && (
         <div
-          className={classNames(
-            "opacity-4 bg-brand-default hover:bg-brand-default text-brand dark:border-emphasis absolute hidden rounded-[4px] p-[6px] text-xs font-semibold leading-5 group-hover:flex group-hover:cursor-pointer",
-            hoverEventDuration && hoverEventDuration > 15 && "items-start pt-3",
-            hoverEventDuration && hoverEventDuration < 15 && "items-center"
-          )}
+          className="bg-brand-default text-brand absolute rounded-[4px] p-1 text-xs font-semibold opacity-0 group-hover:opacity-100"
           style={{
-            height: `calc(${hoverEventDuration}*var(--one-minute-height) - 2px)`,
-            zIndex: 80,
-            // @TODO: This used to be 90% as per Sean's work. I think this was needed when
-            // multiple events are stacked next to each other. We might need to add this back later.
+            height: `calc(60 * var(--one-minute-height) - 2px)`, // Adjusted height if needed
             width: "calc(100% - 2px)",
+            zIndex: 80,
           }}>
-          <div className="overflow-ellipsis leading-[0]">{timeSlot.format(timeFormat)}</div>
+          {timeSlot.format(timeFormat)}
         </div>
+      )}
+      {/* Out of Office Indicator */}
+      {isDisabled && (
+        <OutOfOfficeInSlots
+          fromUser={isDisabled.fromUser}
+          toUser={isDisabled.toUser}
+          reason={isDisabled.reason}
+          emoji={isDisabled.emoji}
+          borderDashed={false}
+          date={timeSlot.format("YYYY-MM-DD")}
+          className="h-full w-full"
+        />
       )}
     </div>
   );
