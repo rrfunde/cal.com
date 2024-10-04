@@ -37,11 +37,11 @@ export const useBookerLayout = (event: Pick<BookerEvent, "profile"> | undefined 
     : bookerLayouts.defaultLayout;
 
   useEffect(() => {
-    if (isMobile && layout !== "mobile") {
-      setLayout("mobile");
-    } else if (!isMobile && layout === "mobile") {
-      setLayout(defaultLayout);
-    }
+    // if (isMobile && layout !== "mobile") {
+    //   setLayout("mobile");
+    // } else if (!isMobile && layout === "mobile") {
+    //   setLayout(defaultLayout);
+    // }
   }, [isMobile, setLayout, layout, defaultLayout]);
   //setting layout from query param
   useEffect(() => {
