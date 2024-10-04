@@ -150,7 +150,7 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
   return (
     <div
       className={classNames(
-        "group flex items-center justify-center",
+        "group flex items-center justify-center", // Removed width class
         isDisabled && "pointer-events-none",
         !isDisabled && "bg-default dark:bg-muted",
         topOffsetMinutes !== undefined && "absolute"
@@ -160,7 +160,7 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
       data-testid="calendar-empty-cell"
       style={{
         height: `calc(60 * var(--one-minute-height))`, // Fixed height for 60 minutes
-        aspectRatio: "1 / 1",
+        width: `calc(60 * var(--one-minute-height))`, // Fixed width equal to height
         overflow: "visible",
         top:
           topOffsetMinutes !== undefined ? `calc(${topOffsetMinutes} * var(--one-minute-height))` : undefined,
@@ -175,7 +175,7 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
         <div
           className="bg-brand-default text-brand absolute rounded-[4px] p-1 text-xs font-semibold opacity-0 group-hover:opacity-100"
           style={{
-            height: `calc(60 * var(--one-minute-height) - 2px)`, // Adjusted height if needed
+            height: `calc(60 * var(--one-minute-height) - 2px)`,
             width: "calc(100% - 2px)",
             zIndex: 80,
           }}>
