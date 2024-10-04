@@ -10,7 +10,6 @@ import { OutOfOfficeInSlots } from "../../../../bookings/Booker/components/OutOf
 import { useCalendarStore } from "../../state/store";
 import type { CalendarAvailableTimeslots } from "../../types/state";
 import type { GridCellToDateProps } from "../../utils";
-import { gridCellToDateTime } from "../../utils";
 
 type EmptyCellProps = GridCellToDateProps & {
   isDisabled?: boolean;
@@ -18,18 +17,11 @@ type EmptyCellProps = GridCellToDateProps & {
 };
 
 export function EmptyCell(props: EmptyCellProps) {
-  const cellToDate = gridCellToDateTime({
-    day: props.day,
-    gridCellIdx: props.gridCellIdx,
-    totalGridCells: props.totalGridCells,
-    selectionLength: props.selectionLength,
-    startHour: props.startHour,
-    timezone: props.timezone,
-  });
+  // Modify as needed based on slot-based offset
+  const { slotIndex } = props; // Ensure slotIndex is passed
+  const topOffsetMinutes = slotIndex * 60;
 
-  const minutesFromStart = (cellToDate.hour() - props.startHour) * 60 + cellToDate.minute();
-
-  return <Cell topOffsetMinutes={minutesFromStart} timeSlot={dayjs(cellToDate).tz(props.timezone)} />;
+  return <Cell topOffsetMinutes={topOffsetMinutes} timeSlot={dayjs(props.day).tz(props.timezone)} />;
 }
 
 type AvailableCellProps = {
@@ -52,17 +44,26 @@ export function AvailableCellsForDay({ availableSlots, day, startHour }: Availab
       timezone?: string;
     }[] = [];
 
-    // first and last slot for ooo to display range correctly in week view
+    // Variables for Out of Office (OOO) handling
     let firstSlotIndex = -1;
     let lastSlotIndex = -1;
     let areAllSlotsAway = true;
     let startEndTimeDuration = 0;
 
-    slotsForToday?.forEach((slot, index) => {
-      const startTime = dayjs(slot.start).tz(timezone);
-      const topOffsetMinutes = (startTime.hour() - startHour) * 60 + startTime.minute();
-      calculatedSlots.push({ slot, topOffsetMinutes });
+    // Define the offset increment (60 minutes)
+    const OFFSET_INCREMENT = 60;
 
+    // Initialize topOffsetMinutes
+    let currentOffset = 0;
+
+    slotsForToday?.forEach((slot, index) => {
+      // Assign currentOffset to the slot
+      calculatedSlots.push({ slot, topOffsetMinutes: currentOffset });
+
+      // Increment for the next slot
+      currentOffset += OFFSET_INCREMENT;
+
+      // OOO Handling
       if (!slot.away) {
         areAllSlotsAway = false;
       } else {
@@ -73,16 +74,17 @@ export function AvailableCellsForDay({ availableSlots, day, startHour }: Availab
       }
     });
 
+    // Handle Out of Office (OOO) if all slots are away
     if (areAllSlotsAway && firstSlotIndex !== -1) {
       const firstSlot = slotsForToday[firstSlotIndex];
       const lastSlot = slotsForToday[lastSlotIndex];
-      startEndTimeDuration = dayjs(lastSlot.end).diff(dayjs(firstSlot.start), "minutes");
+      // Calculate the total duration for OOO display
+      startEndTimeDuration = OFFSET_INCREMENT * (lastSlotIndex - firstSlotIndex + 1);
 
       if (firstSlot.toUser == null) {
         return null;
       }
 
-      // This will return null if all slots are away and the first slot has no user
       return {
         slots: calculatedSlots,
         startEndTimeDuration,
@@ -151,7 +153,7 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
         "group flex w-[calc(100%-1px)] items-center justify-center",
         isDisabled && "pointer-events-none",
         !isDisabled && "bg-default dark:bg-muted",
-        topOffsetMinutes && "absolute"
+        topOffsetMinutes !== undefined && "absolute"
       )}
       data-disabled={isDisabled}
       data-slot={timeSlot.toISOString()}
@@ -159,7 +161,8 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
       style={{
         height: `calc(60 * var(--one-minute-height))`, // Fixed height for 60 minutes
         overflow: "visible",
-        top: topOffsetMinutes ? `calc(${topOffsetMinutes} * var(--one-minute-height))` : undefined,
+        top:
+          topOffsetMinutes !== undefined ? `calc(${topOffsetMinutes} * var(--one-minute-height))` : undefined,
       }}
       onClick={() => {
         if (!isDisabled && onEmptyCellClick) {
