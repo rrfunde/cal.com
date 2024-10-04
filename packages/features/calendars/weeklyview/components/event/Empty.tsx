@@ -150,7 +150,7 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
   return (
     <div
       className={classNames(
-        "group flex w-[calc(100%-1px)] items-center justify-center",
+        "group flex items-center justify-center",
         isDisabled && "pointer-events-none",
         !isDisabled && "bg-default dark:bg-muted",
         topOffsetMinutes !== undefined && "absolute"
@@ -160,6 +160,7 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
       data-testid="calendar-empty-cell"
       style={{
         height: `calc(60 * var(--one-minute-height))`, // Fixed height for 60 minutes
+        aspectRatio: "1 / 1",
         overflow: "visible",
         top:
           topOffsetMinutes !== undefined ? `calc(${topOffsetMinutes} * var(--one-minute-height))` : undefined,
