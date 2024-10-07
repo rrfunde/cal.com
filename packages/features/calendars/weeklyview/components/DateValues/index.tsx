@@ -17,7 +17,7 @@ export function DateValues({ days, containerNavRef }: Props) {
   return (
     <div
       ref={containerNavRef}
-      className="bg-default dark:bg-muted border-b-subtle rtl:border-r-default sticky top-[var(--calendar-dates-sticky-offset,0px)] z-[80] flex-none border-b border-r sm:pr-8">
+      className="bg-default dark:bg-muted border-b-subtle rtl:border-r-default sticky top-[var(--calendar-dates-sticky-offset,0px)] z-[80] flex-none border-b border-r pl-14 sm:pl-0 sm:pr-8">
       <div className="text-subtle flex text-sm leading-6 sm:hidden" data-dayslength={days.length}>
         {days.map((day) => {
           const isToday = dayjs().isSame(day, "day");
@@ -25,7 +25,7 @@ export function DateValues({ days, containerNavRef }: Props) {
             <button
               key={day.toString()}
               type="button"
-              className="flex flex-1 flex-col items-center pb-3 pt-2">
+              className="flex flex-1 flex-col items-center px-1 pb-3 pt-2">
               {day.format("dd")}{" "}
               <span
                 className={classNames(
