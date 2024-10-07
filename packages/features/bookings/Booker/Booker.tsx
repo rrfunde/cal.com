@@ -299,7 +299,7 @@ const BookerComponent = ({
                     isMyLink={Boolean(username === sessionUsername)}
                     eventSlug={eventSlug}
                     enabledLayouts={bookerLayouts.enabledLayouts}
-                    extraDays={layout === BookerLayouts.COLUMN_VIEW ? columnViewExtraDays.current : extraDays}
+                    extraDays={7}
                     isMobile={isMobile}
                     nextSlots={nextSlots}
                     renderOverlay={() =>
