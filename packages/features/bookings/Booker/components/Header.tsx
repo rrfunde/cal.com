@@ -51,7 +51,7 @@ export function Header({
     [setLayout, layout]
   );
 
-  if (isMobile || !enabledLayouts) return null;
+  // if (isMobile || !enabledLayouts) return null;
 
   // In month view we only show the layout toggle.
   if (isMonthView) {
