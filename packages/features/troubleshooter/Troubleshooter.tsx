@@ -11,7 +11,7 @@ import type { TroubleshooterProps } from "./types";
 
 const extraDaysConfig = {
   desktop: 7,
-  tablet: 4,
+  tablet: 7,
 };
 
 const TroubleshooterComponent = ({ month }: TroubleshooterProps) => {

@@ -344,7 +344,7 @@ const BookerComponent = ({
               className="border-subtle sticky top-0  ml-[-1px] h-full md:border-l"
               {...fadeInLeft}>
               <LargeCalendar
-                extraDays={extraDays}
+                extraDays={7} // this will determine how many columns should be shown
                 schedule={schedule.data}
                 isLoading={schedule.isPending}
                 event={event}
