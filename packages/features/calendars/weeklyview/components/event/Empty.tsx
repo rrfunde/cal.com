@@ -56,43 +56,60 @@ export function AvailableCellsForDay({ availableSlots, day, startHour }: Availab
     // Initialize topOffsetMinutes
     let currentOffset = 0;
 
-    slotsForToday?.forEach((slot, index) => {
-      // Assign currentOffset to the slot
-      calculatedSlots.push({ slot, topOffsetMinutes: currentOffset });
+    if (slotsForToday && slotsForToday.length > 0) {
+      const minSlotDuration = slotsForToday.reduce((min, slot) => {
+        const duration = dayjs(slot.end).diff(dayjs(slot.start), "minute");
+        return Math.min(min, duration);
+      }, Infinity);
 
-      // Increment for the next slot
-      currentOffset += OFFSET_INCREMENT;
+      let previousSlotEnd = dayjs(slotsForToday[0].start).tz(timezone);
 
-      // OOO Handling
-      if (!slot.away) {
-        areAllSlotsAway = false;
-      } else {
-        if (firstSlotIndex === -1) {
-          firstSlotIndex = index;
+      slotsForToday?.forEach((slot, index) => {
+        const slotStart = dayjs(slot.start).tz(timezone);
+        // Assign currentOffset to the slot
+        if (slotStart.isAfter(previousSlotEnd)) {
+          const missingMinutes = slotStart.diff(previousSlotEnd, "minute");
+          const missingSlots = Math.floor(missingMinutes / minSlotDuration);
+          currentOffset += missingSlots * OFFSET_INCREMENT;
         }
-        lastSlotIndex = index;
+
+        calculatedSlots.push({ slot, topOffsetMinutes: currentOffset });
+
+        // Increment for the next slot
+        currentOffset += OFFSET_INCREMENT;
+
+        previousSlotEnd = dayjs(slot.end).tz(timezone);
+
+        // OOO Handling
+        if (!slot.away) {
+          areAllSlotsAway = false;
+        } else {
+          if (firstSlotIndex === -1) {
+            firstSlotIndex = index;
+          }
+          lastSlotIndex = index;
+        }
+      });
+
+      // Handle Out of Office (OOO) if all slots are away
+      if (areAllSlotsAway && firstSlotIndex !== -1) {
+        const firstSlot = slotsForToday[firstSlotIndex];
+        const lastSlot = slotsForToday[lastSlotIndex];
+        // Calculate the total duration for OOO display
+        startEndTimeDuration = OFFSET_INCREMENT * (lastSlotIndex - firstSlotIndex + 1);
+
+        if (firstSlot.toUser == null) {
+          return null;
+        }
+
+        return {
+          slots: calculatedSlots,
+          startEndTimeDuration,
+          firstSlot,
+          timezone,
+        };
       }
-    });
-
-    // Handle Out of Office (OOO) if all slots are away
-    if (areAllSlotsAway && firstSlotIndex !== -1) {
-      const firstSlot = slotsForToday[firstSlotIndex];
-      const lastSlot = slotsForToday[lastSlotIndex];
-      // Calculate the total duration for OOO display
-      startEndTimeDuration = OFFSET_INCREMENT * (lastSlotIndex - firstSlotIndex + 1);
-
-      if (firstSlot.toUser == null) {
-        return null;
-      }
-
-      return {
-        slots: calculatedSlots,
-        startEndTimeDuration,
-        firstSlot,
-        timezone,
-      };
     }
-
     return { slots: calculatedSlots, startEndTimeDuration };
   }, [slotsForToday, startHour, timezone]);
 
