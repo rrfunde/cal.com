@@ -327,14 +327,73 @@ const BookerComponent = ({
                 )}
               </BookerSection>
             )}
+            {!hideEventTypeDetails && (
+              <StickyOnDesktop key="meta" className={classNames("relative z-10 flex [grid-area:meta]")}>
+                <BookerSection
+                  area="meta"
+                  className="max-w-screen flex w-full flex-col md:w-[var(--booker-meta-width)]">
+                  {orgBannerUrl && !isPlatform && (
+                    <img
+                      loading="eager"
+                      className="-mb-9 ltr:rounded-tl-md rtl:rounded-tr-md"
+                      alt="org banner"
+                      src={orgBannerUrl}
+                    />
+                  )}
+                  <EventMeta
+                    classNames={{
+                      eventMetaContainer: customClassNames?.eventMetaCustomClassNames?.eventMetaContainer,
+                      eventMetaTitle: customClassNames?.eventMetaCustomClassNames?.eventMetaTitle,
+                      eventMetaTimezoneSelect:
+                        customClassNames?.eventMetaCustomClassNames?.eventMetaTimezoneSelect,
+                    }}
+                    event={event.data}
+                    isPending={event.isPending}
+                    isPlatform={isPlatform}
+                  />
+                  {layout !== BookerLayouts.MONTH_VIEW &&
+                    !(layout === "mobile" && bookerState === "booking") && (
+                      <div className="mt-auto px-5 py-3">
+                        <DatePicker event={event} schedule={schedule} scrollToTimeSlots={scrollToTimeSlots} />
+                      </div>
+                    )}
+                </BookerSection>
+              </StickyOnDesktop>
+            )}
 
             <BookerSection
               key="book-event-form"
               area="main"
-              className="sticky top-0 ml-[-1px] h-full p-6 md:w-[var(--booker-main-width)] md:border-l"
+              className={`sticky top-0 ml-[-1px] h-full p-6 md:w-[var(--booker-main-width)] ${
+                !hideEventTypeDetails ? "md:border-l" : ""
+              }`}
               {...fadeInLeft}
               visible={bookerState === "booking" && !shouldShowFormInDialog}>
               {EventBooker}
+            </BookerSection>
+
+            <BookerSection
+              key="datepicker"
+              area="main"
+              visible={bookerState !== "booking" && layout === BookerLayouts.MONTH_VIEW}
+              {...fadeInLeft}
+              initial="visible"
+              className={`ml-[-1px] h-full flex-shrink px-5 py-3 lg:w-[var(--booker-main-width)] ${
+                !hideEventTypeDetails ? "md:border-subtle md:border-l" : ""
+              }`}>
+              <DatePicker
+                classNames={{
+                  datePickerContainer: customClassNames?.datePickerCustomClassNames?.datePickerContainer,
+                  datePickerTitle: customClassNames?.datePickerCustomClassNames?.datePickerTitle,
+                  datePickerDays: customClassNames?.datePickerCustomClassNames?.datePickerDays,
+                  datePickerDate: customClassNames?.datePickerCustomClassNames?.datePickerDate,
+                  datePickerDatesActive: customClassNames?.datePickerCustomClassNames?.datePickerDatesActive,
+                  datePickerToggle: customClassNames?.datePickerCustomClassNames?.datePickerToggle,
+                }}
+                event={event}
+                schedule={schedule}
+                scrollToTimeSlots={scrollToTimeSlots}
+              />
             </BookerSection>
 
             <BookerSection
