@@ -60,7 +60,7 @@ export function Calendar(props: CalendarComponentProps) {
       {/* {hideHeader !== true && <SchedulerHeading />} */}
       <div ref={container} className="bg-default dark:bg-muted relative isolate flex flex-auto flex-col">
         <div
-          style={{ width: "100%", minWidth: "500px" }} // Adjust min-width for mobile horizontal scroll
+          style={{ width: "100%", minWidth: "400px" }} // Adjust min-width for mobile horizontal scroll
           className="flex h-full max-w-full flex-none flex-col sm:max-w-none md:max-w-full">
           <DateValues containerNavRef={containerNav} days={days} />
           <div className="relative flex flex-auto overflow-x-auto">

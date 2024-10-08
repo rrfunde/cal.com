@@ -150,17 +150,15 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
   return (
     <div
       className={classNames(
-        "group flex items-center justify-center", // Removed width class
+        "group flex w-full items-center justify-center bg-white",
         isDisabled && "pointer-events-none",
-        !isDisabled && "bg-default dark:bg-muted",
-        topOffsetMinutes !== undefined && "absolute"
+        topOffsetMinutes !== undefined && "absolute left-0 right-0"
       )}
       data-disabled={isDisabled}
       data-slot={timeSlot.toISOString()}
       data-testid="calendar-empty-cell"
       style={{
         height: `calc(60 * var(--one-minute-height))`, // Fixed height for 60 minutes
-        width: `calc(60 * var(--one-minute-height))`, // Fixed width equal to height
         overflow: "visible",
         top:
           topOffsetMinutes !== undefined ? `calc(${topOffsetMinutes} * var(--one-minute-height))` : undefined,
@@ -170,16 +168,15 @@ export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
           onEmptyCellClick(timeSlot.toDate());
         }
       }}>
-      {/* Hover Tooltip */}
+      {/* Centered "O" */}
       {!isDisabled && (
         <div
-          className="bg-brand-default text-brand absolute rounded-[4px] p-1 text-xs font-semibold opacity-0 group-hover:opacity-100"
+          className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-500"
           style={{
             height: `calc(60 * var(--one-minute-height) - 2px)`,
             width: "calc(100% - 2px)",
-            zIndex: 80,
           }}>
-          {timeSlot.format(timeFormat)}
+          O
         </div>
       )}
       {/* Out of Office Indicator */}
