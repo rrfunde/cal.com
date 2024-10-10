@@ -205,8 +205,6 @@ export function UnavailableCellsForDay({
   const slotsForToday = availableSlots && availableSlots[dateFormatted];
 
   const unavailableSlots = useMemo(() => {
-    if (!slotsForToday || slotsForToday.length === 0) return null;
-
     const OFFSET_INCREMENT = 60; // Always 60 minutes for display purposes
     const dayStart = date.hour(startHour).minute(0).second(0);
     const dayEnd = date.hour(endHour).minute(0).second(0);
@@ -215,11 +213,9 @@ export function UnavailableCellsForDay({
     let currentOffset = 0;
     const unavailableSlots = [];
 
-    slotsForToday.forEach((availableSlot) => {
-      const slotStart = dayjs(availableSlot.start).tz(timezone);
-
-      // Add unavailable slots before the current available slot
-      while (currentTime.isBefore(slotStart)) {
+    if (!slotsForToday || slotsForToday.length === 0) {
+      // If there are no available slots, mark the entire day as unavailable
+      while (currentTime.isBefore(dayEnd)) {
         unavailableSlots.push({
           start: currentTime,
           topOffsetMinutes: currentOffset,
@@ -227,26 +223,38 @@ export function UnavailableCellsForDay({
         currentTime = currentTime.add(slotDuration, "minute");
         currentOffset += OFFSET_INCREMENT;
       }
+    } else {
+      slotsForToday.forEach((availableSlot) => {
+        const slotStart = dayjs(availableSlot.start).tz(timezone);
 
-      // Move to the end of the current available slot
-      currentTime = dayjs(availableSlot.end).tz(timezone);
-      currentOffset += OFFSET_INCREMENT;
-    });
+        // Add unavailable slots before the current available slot
+        while (currentTime.isBefore(slotStart)) {
+          unavailableSlots.push({
+            start: currentTime,
+            topOffsetMinutes: currentOffset,
+          });
+          currentTime = currentTime.add(slotDuration, "minute");
+          currentOffset += OFFSET_INCREMENT;
+        }
 
-    // Add any remaining unavailable slots after the last available slot
-    while (currentTime.isBefore(dayEnd)) {
-      unavailableSlots.push({
-        start: currentTime,
-        topOffsetMinutes: currentOffset,
+        // Move to the end of the current available slot
+        currentTime = dayjs(availableSlot.end).tz(timezone);
+        currentOffset += OFFSET_INCREMENT;
       });
-      currentTime = currentTime.add(slotDuration, "minute");
-      currentOffset += OFFSET_INCREMENT;
+
+      // Add any remaining unavailable slots after the last available slot
+      while (currentTime.isBefore(dayEnd)) {
+        unavailableSlots.push({
+          start: currentTime,
+          topOffsetMinutes: currentOffset,
+        });
+        currentTime = currentTime.add(slotDuration, "minute");
+        currentOffset += OFFSET_INCREMENT;
+      }
     }
 
     return unavailableSlots;
   }, [slotsForToday, startHour, endHour, timezone, date, slotDuration]);
-
-  if (!unavailableSlots) return null;
 
   return (
     <>
