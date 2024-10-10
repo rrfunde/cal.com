@@ -8,7 +8,7 @@ import "../styles/styles.css";
 import type { CalendarComponentProps } from "../types/state";
 import { getDaysBetweenDates, getHoursToDisplay } from "../utils";
 import { DateValues } from "./DateValues";
-import { AvailableCellsForDay, EmptyCell } from "./event/Empty";
+import { AvailableCellsForDay, EmptyCell, UnavailableCellsForDay } from "./event/Empty";
 import { EventList } from "./event/EventList";
 import { SchedulerColumns } from "./grid";
 import { HorizontalLines } from "./horizontalLines";
@@ -47,31 +47,23 @@ export function Calendar(props: CalendarComponentProps) {
 
   return (
     <div
-      className={classNames(
-        "scheduler-wrapper flex h-full w-full flex-col sm:flex-row",
-        "overflow-auto" // Allow scrolling
-      )}
+      className={classNames("scheduler-wrapper flex h-full w-full flex-col sm:flex-row", "overflow-auto")}
       style={
         {
           "--one-minute-height": `calc(${hourSize}px/60)`,
           "--gridDefaultSize": `${hourSize}px`,
         } as React.CSSProperties
       }>
-      {/* {hideHeader !== true && <SchedulerHeading />} */}
       <div ref={container} className="bg-default dark:bg-muted relative isolate flex flex-auto flex-col">
         <div
-          style={{ width: "100%", minWidth: "400px" }} // Adjust min-width for mobile horizontal scroll
+          style={{ width: "100%", minWidth: "400px" }}
           className="flex h-full max-w-full flex-none flex-col sm:max-w-none md:max-w-full">
           <DateValues containerNavRef={containerNav} days={days} />
           <div className="relative flex flex-auto overflow-x-auto">
-            {" "}
-            {/* Enable horizontal scroll on mobile */}
             <div className="bg-default dark:bg-muted ring-muted border-default sticky left-0 z-10 w-14 flex-none border-l border-r ring-1" />
             <div
               className="grid flex-auto grid-cols-1 grid-rows-1 [--disabled-gradient-background:#F8F9FB] [--disabled-gradient-foreground:#E6E7EB] dark:[--disabled-gradient-background:#262626] dark:[--disabled-gradient-foreground:#393939]"
-              style={{
-                backgroundColor: "gray",
-              }}>
+              style={{ backgroundColor: "gray" }}>
               <HorizontalLines
                 startHour={startHour}
                 endHour={endHour}
@@ -83,20 +75,18 @@ export function Calendar(props: CalendarComponentProps) {
               <SchedulerColumns
                 offsetHeight={containerOffset.current?.offsetHeight}
                 gridStopsPerDay={numberOfGridStopsPerDay}>
-                {days.map((day, i) => {
-                  return (
-                    <li key={day.toISOString()} className="relative" style={{ gridColumnStart: i + 1 }}>
-                      <EventList day={day} />
-                    </li>
-                  );
-                })}
+                {days.map((day, i) => (
+                  <li key={day.toISOString()} className="relative" style={{ gridColumnStart: i + 1 }}>
+                    <EventList day={day} />
+                  </li>
+                ))}
               </SchedulerColumns>
 
               <SchedulerColumns
                 ref={schedulerGrid}
                 offsetHeight={containerOffset.current?.offsetHeight}
                 gridStopsPerDay={numberOfGridStopsPerDay}>
-                {[...Array(days.length)].map((_, i) => (
+                {days.map((day, i) => (
                   <li
                     className="relative"
                     key={i}
@@ -104,20 +94,31 @@ export function Calendar(props: CalendarComponentProps) {
                       gridRow: `1 / span ${numberOfGridStopsPerDay}`,
                     }}>
                     {availableTimeslots ? (
-                      <AvailableCellsForDay
-                        key={days[i].toISOString()}
-                        day={days[i]}
-                        startHour={startHour}
-                        slotDuration={hoverEventDuration}
-                        availableSlots={availableTimeslots}
-                      />
+                      <>
+                        <AvailableCellsForDay
+                          key={day.toISOString()}
+                          day={day}
+                          startHour={startHour}
+                          slotDuration={hoverEventDuration}
+                          availableSlots={availableTimeslots}
+                        />
+                        <UnavailableCellsForDay
+                          key={`unavailable-${day.toISOString()}`}
+                          day={day}
+                          startHour={startHour}
+                          endHour={endHour}
+                          availableSlots={availableTimeslots}
+                          timezone={timezone}
+                          slotDuration={hoverEventDuration}
+                        />
+                      </>
                     ) : (
                       [...Array(numberOfGridStopsPerDay)].map((_, j) => {
                         const key = `${i}-${j}`;
                         return (
                           <EmptyCell
                             key={key}
-                            day={days[i]}
+                            day={day}
                             gridCellIdx={j}
                             totalGridCells={numberOfGridStopsPerDay}
                             selectionLength={endHour - startHour}
@@ -130,16 +131,6 @@ export function Calendar(props: CalendarComponentProps) {
                   </li>
                 ))}
               </SchedulerColumns>
-
-              {/*<SchedulerColumnsWithX*/}
-              {/*  offsetHeight={containerOffset.current?.offsetHeight}*/}
-              {/*  gridStopsPerDay={numberOfGridStopsPerDay}*/}
-              {/*  days={days}*/}
-              {/*  startHour={startHour}*/}
-              {/*  endHour={endHour}*/}
-              {/*  availableTimeslots={availableTimeslots}*/}
-              {/*  timezone={timezone}*/}
-              {/*/>*/}
             </div>
           </div>
         </div>
