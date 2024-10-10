@@ -24,103 +24,60 @@ export function EmptyCell(props: EmptyCellProps) {
   return <Cell topOffsetMinutes={topOffsetMinutes} timeSlot={dayjs(props.day).tz(props.timezone)} />;
 }
 
-type AvailableCellProps = {
+interface AvailableCellProps {
   availableSlots: CalendarAvailableTimeslots;
-  day: GridCellToDateProps["day"];
-  startHour: GridCellToDateProps["startHour"];
-};
+  day: string;
+  startHour: number;
+  slotDuration: number; // Duration of each slot in minutes
+}
 
-export function AvailableCellsForDay({ availableSlots, day, startHour }: AvailableCellProps) {
+export function AvailableCellsForDay({ availableSlots, day, startHour, slotDuration }: AvailableCellProps) {
   const { timezone } = useTimePreferences();
-  const date = dayjs(day);
+  const date = dayjs(day).tz(timezone);
   const dateFormatted = date.format("YYYY-MM-DD");
   const slotsForToday = availableSlots && availableSlots[dateFormatted];
 
   const slots = useMemo(() => {
-    const calculatedSlots: {
-      slot: CalendarAvailableTimeslots[string][number];
-      topOffsetMinutes: number;
-      firstSlot?: CalendarAvailableTimeslots[string][number];
-      timezone?: string;
-    }[] = [];
+    if (!slotsForToday || slotsForToday.length === 0) return null;
 
-    // Variables for Out of Office (OOO) handling
-    let firstSlotIndex = -1;
-    let lastSlotIndex = -1;
-    let areAllSlotsAway = true;
-    let startEndTimeDuration = 0;
+    const OFFSET_INCREMENT = 60; // Always 60 minutes for display purposes
 
-    // Define the offset increment (60 minutes)
-    const OFFSET_INCREMENT = 60;
+    const dayStart = date.hour(startHour).minute(0).second(0);
+    const firstSlotStart = dayjs(slotsForToday[0].start).tz(timezone);
 
-    // Initialize topOffsetMinutes
-    let currentOffset = 0;
+    // Calculate initial missing slots
+    const initialMissingMinutes = firstSlotStart.diff(dayStart, "minute");
+    const initialMissingSlots = Math.floor(initialMissingMinutes / slotDuration);
+    let currentOffset = initialMissingSlots * OFFSET_INCREMENT;
 
-    slotsForToday?.forEach((slot, index) => {
-      // Assign currentOffset to the slot
-      calculatedSlots.push({ slot, topOffsetMinutes: currentOffset });
+    let previousSlotEnd = firstSlotStart;
 
-      // Increment for the next slot
-      currentOffset += OFFSET_INCREMENT;
+    return slotsForToday.map((slot) => {
+      const slotStart = dayjs(slot.start).tz(timezone);
 
-      // OOO Handling
-      if (!slot.away) {
-        areAllSlotsAway = false;
-      } else {
-        if (firstSlotIndex === -1) {
-          firstSlotIndex = index;
-        }
-        lastSlotIndex = index;
-      }
-    });
-
-    // Handle Out of Office (OOO) if all slots are away
-    if (areAllSlotsAway && firstSlotIndex !== -1) {
-      const firstSlot = slotsForToday[firstSlotIndex];
-      const lastSlot = slotsForToday[lastSlotIndex];
-      // Calculate the total duration for OOO display
-      startEndTimeDuration = OFFSET_INCREMENT * (lastSlotIndex - firstSlotIndex + 1);
-
-      if (firstSlot.toUser == null) {
-        return null;
+      if (slotStart.isAfter(previousSlotEnd)) {
+        const missingMinutes = slotStart.diff(previousSlotEnd, "minute");
+        const missingSlots = Math.floor(missingMinutes / slotDuration);
+        currentOffset += missingSlots * OFFSET_INCREMENT;
       }
 
-      return {
-        slots: calculatedSlots,
-        startEndTimeDuration,
-        firstSlot,
-        timezone,
+      const calculatedSlot = {
+        slot,
+        topOffsetMinutes: currentOffset,
       };
-    }
 
-    return { slots: calculatedSlots, startEndTimeDuration };
-  }, [slotsForToday, startHour, timezone]);
+      currentOffset += OFFSET_INCREMENT;
+      previousSlotEnd = dayjs(slot.end).tz(timezone);
 
-  if (slots === null) return null;
+      return calculatedSlot;
+    });
+  }, [slotsForToday, startHour, timezone, date, slotDuration]);
 
-  if (slots.startEndTimeDuration) {
-    const { firstSlot, startEndTimeDuration } = slots;
-    return (
-      <CustomCell
-        timeSlot={dayjs(firstSlot?.start).tz(slots.timezone)}
-        topOffsetMinutes={slots.slots[0]?.topOffsetMinutes}
-        startEndTimeDuration={startEndTimeDuration}>
-        <OutOfOfficeInSlots
-          fromUser={firstSlot?.fromUser}
-          toUser={firstSlot?.toUser}
-          reason={firstSlot?.reason}
-          emoji={firstSlot?.emoji}
-          borderDashed={false}
-          date={dateFormatted}
-          className="pb-0"
-        />
-      </CustomCell>
-    );
-  }
+  if (!slots) return null;
 
   return (
     <>
-      {slots.slots.map((slot, index) => (
+      {slots.map((slot, index) => (
         <Cell
           key={index}
           timeSlot={dayjs(slot.slot.start).tz(timezone)}
@@ -135,6 +92,7 @@ type CellProps = {
   isDisabled?: boolean;
   topOffsetMinutes?: number;
   timeSlot: Dayjs;
+  slotDuration: number;
 };
 
 export function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
@@ -220,6 +178,116 @@ function CustomCell({
           width: "calc(100% - 2px)",
         }}>
         {children}
+      </div>
+    </div>
+  );
+}
+
+type UnavailableCellsForDayProps = {
+  availableSlots: CalendarAvailableTimeslots;
+  day: GridCellToDateProps["day"];
+  startHour: GridCellToDateProps["startHour"];
+  endHour: GridCellToDateProps["endHour"];
+  timezone: string;
+  slotDuration: number; // Duration of each slot in minutes
+};
+
+export function UnavailableCellsForDay({
+  availableSlots,
+  day,
+  startHour,
+  endHour,
+  timezone,
+  slotDuration,
+}: UnavailableCellsForDayProps) {
+  const date = dayjs(day).tz(timezone);
+  const dateFormatted = date.format("YYYY-MM-DD");
+  const slotsForToday = availableSlots && availableSlots[dateFormatted];
+
+  const unavailableSlots = useMemo(() => {
+    const OFFSET_INCREMENT = 60; // Always 60 minutes for display purposes
+    const dayStart = date.hour(startHour).minute(0).second(0);
+    const dayEnd = date.hour(endHour).minute(0).second(0);
+
+    let currentTime = dayStart;
+    let currentOffset = 0;
+    const unavailableSlots = [];
+
+    if (!slotsForToday || slotsForToday.length === 0) {
+      // If there are no available slots, mark the entire day as unavailable
+      while (currentTime.isBefore(dayEnd)) {
+        unavailableSlots.push({
+          start: currentTime,
+          topOffsetMinutes: currentOffset,
+        });
+        currentTime = currentTime.add(slotDuration, "minute");
+        currentOffset += OFFSET_INCREMENT;
+      }
+    } else {
+      slotsForToday.forEach((availableSlot) => {
+        const slotStart = dayjs(availableSlot.start).tz(timezone);
+
+        // Add unavailable slots before the current available slot
+        while (currentTime.isBefore(slotStart)) {
+          unavailableSlots.push({
+            start: currentTime,
+            topOffsetMinutes: currentOffset,
+          });
+          currentTime = currentTime.add(slotDuration, "minute");
+          currentOffset += OFFSET_INCREMENT;
+        }
+
+        // Move to the end of the current available slot
+        currentTime = dayjs(availableSlot.end).tz(timezone);
+        currentOffset += OFFSET_INCREMENT;
+      });
+
+      // Add any remaining unavailable slots after the last available slot
+      while (currentTime.isBefore(dayEnd)) {
+        unavailableSlots.push({
+          start: currentTime,
+          topOffsetMinutes: currentOffset,
+        });
+        currentTime = currentTime.add(slotDuration, "minute");
+        currentOffset += OFFSET_INCREMENT;
+      }
+    }
+
+    return unavailableSlots;
+  }, [slotsForToday, startHour, endHour, timezone, date, slotDuration]);
+
+  return (
+    <>
+      {unavailableSlots.map((slot, index) => (
+        <UnavailableCell key={index} timeSlot={slot.start} topOffsetMinutes={slot.topOffsetMinutes} />
+      ))}
+    </>
+  );
+}
+
+export function UnavailableCell({ topOffsetMinutes, timeSlot, slotDuration }: CellProps) {
+  return (
+    <div
+      className={classNames(
+        "group flex w-full items-center justify-center bg-gray-200",
+        topOffsetMinutes !== undefined && "absolute left-0 right-0"
+      )}
+      data-slot={timeSlot.toISOString()}
+      data-testid="calendar-unavailable-cell"
+      style={{
+        height: `calc(${slotDuration} * var(--one-minute-height))`,
+        overflow: "visible",
+        top:
+          topOffsetMinutes !== undefined ? `calc(${topOffsetMinutes} * var(--one-minute-height))` : undefined,
+      }}>
+      <div
+        className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-500"
+        style={{
+          height: `calc(${slotDuration} * var(--one-minute-height) - 2px)`,
+          width: "calc(100% - 2px)",
+          paddingTop: "15px",
+        }}>
+        X
       </div>
     </div>
   );
