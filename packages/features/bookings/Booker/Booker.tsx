@@ -15,9 +15,9 @@ import { BookerLayouts } from "@calcom/prisma/zod-utils";
 
 import { VerifyCodeDialog } from "../components/VerifyCodeDialog";
 import { AvailableTimeSlots } from "./components/AvailableTimeSlots";
-import { BookEventForm } from "./components/BookEventForm";
 import { BookFormAsModal } from "./components/BookEventForm/BookFormAsModal";
 import { BookingTerms } from "./components/BookEventForm/BookingTerms";
+import { MultiStepBookEventForm } from "./components/BookEventForm/MultiStepBookEventForm";
 import { HavingTroubleFindingTime } from "./components/HavingTroubleFindingTime";
 import { Header } from "./components/Header";
 import { InstantBooking } from "./components/InstantBooking";
@@ -173,7 +173,7 @@ const BookerComponent = ({
 
     return (
       <BookingStep>
-        <BookEventForm
+        <MultiStepBookEventForm
           key={key}
           onCancel={() => {
             setSelectedTimeslot(null);
@@ -214,7 +214,7 @@ const BookerComponent = ({
               onGoBack={onGoBackInstantMeeting}
             />
           )}
-        </BookEventForm>
+        </MultiStepBookEventForm>
       </BookingStep>
     );
   }, [
