@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 
 import type { LocationObject } from "@calcom/app-store/locations";
@@ -25,14 +26,23 @@ export const BookingFields = ({
   isDynamicGroupBooking: boolean;
 }) => {
   const { t } = useLocale();
-  const { watch, setValue } = useFormContext();
+  const { watch, setValue, getValues } = useFormContext();
   const locationResponse = watch("responses.location");
   const currentView = rescheduleUid ? "reschedule" : "";
   const isInstantMeeting = useBookerStore((state) => state.isInstantMeeting);
 
+  // Effect to reset field value when moving to a new step
+  useEffect(() => {
+    if (fields.length === 1) {
+      const fieldName = fields[0].name;
+      const currentValue = getValues(`responses.${fieldName}`);
+      if (currentValue === undefined) {
+        setValue(`responses.${fieldName}`, "");
+      }
+    }
+  }, [fields, setValue, getValues]);
+
   return (
-    // TODO: It might make sense to extract this logic into BookingFields config, that would allow to quickly configure system fields and their editability in fresh booking and reschedule booking view
-    // The logic here intends to make modifications to booking fields based on the way we want to specifically show Booking Form
     <div>
       {fields.map((field, index) => {
         // Don't Display Location field in case of instant meeting as only Cal Video is supported
@@ -131,7 +141,12 @@ export const BookingFields = ({
         }
 
         return (
-          <FormBuilderField className="mb-4" field={{ ...field, hidden }} readOnly={readOnly} key={index} />
+          <FormBuilderField
+            className="mb-4"
+            field={{ ...field, hidden }}
+            readOnly={readOnly}
+            key={`${index}-${field.name}`}
+          />
         );
       })}
     </div>
